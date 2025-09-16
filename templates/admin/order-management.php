@@ -150,8 +150,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                                         </a>
                                         <select class="update-status-select" data-order-id="<?php echo esc_attr( $order->id ); ?>" style="margin-left:6px;">
                                             <option value="pending" <?php selected( $order->status, 'pending' ); ?>><?php esc_html_e( 'Pending', 'we-catering' ); ?></option>
-                                            <option value="accepted" <?php selected( $order->status, 'confirmed' ); ?>><?php esc_html_e( 'Accepted', 'we-catering' ); ?></option>
-                                            <option value="rejected" <?php selected( $order->status, 'cancelled' ); ?>><?php esc_html_e( 'Rejected', 'we-catering' ); ?></option>
+                                            <option value="confirmed" <?php selected( $order->status, 'confirmed' ); ?>><?php esc_html_e( 'Accepted', 'we-catering' ); ?></option>
+                                            <option value="cancelled" <?php selected( $order->status, 'cancelled' ); ?>><?php esc_html_e( 'Rejected', 'we-catering' ); ?></option>
                                         </select>
                                     </td>
                                 </tr>
