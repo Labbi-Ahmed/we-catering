@@ -67,6 +67,87 @@
                 $('.we-catering-tab-content').hide();
                 $(target).show();
             });
+
+            // Global delegated handlers so they work without opening a modal first
+            // Delete organization
+            $(document).on('click', '.delete-organization', function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                if (!id) return;
+                $.post(We_Catering_Admin.ajax_url, {
+                    action: 'we_catering_delete_organization',
+                    nonce: We_Catering_Admin.nonce,
+                    organization_id: id
+                }).done(function(res){
+                    if (res && res.success) {
+                        location.reload();
+                    } else {
+                        alert((res && res.data && res.data.message) || 'Failed to delete.');
+                    }
+                }).fail(function(){ alert('Network error.'); });
+            });
+
+            // Delete menu item
+            $(document).on('click', '.delete-menu-item', function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                if (!id) return;
+                $.post(We_Catering_Admin.ajax_url, {
+                    action: 'we_catering_delete_menu_item',
+                    nonce: We_Catering_Admin.nonce,
+                    menu_item_id: id
+                }).done(function(res){
+                    if (res && res.success) {
+                        location.reload();
+                    } else {
+                        alert((res && res.data && res.data.message) || 'Failed to delete.');
+                    }
+                }).fail(function(){ alert('Network error.'); });
+            });
+
+            // Edit menu item
+            $(document).on('click', '.edit-menu-item', function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                if (!id) return;
+                WeCateringAdmin.editMenuItem(id);
+            });
+
+            // Save daily menu
+            $(document).on('click', '#save-daily-menu', function(e){
+                e.preventDefault();
+                var date = $('#menu_date').val();
+                var ids = [];
+                $('input[name="daily_menu_items[]"]:checked').each(function(){ ids.push($(this).val()); });
+                $.post(We_Catering_Admin.ajax_url, {
+                    action: 'we_catering_set_daily_menu',
+                    nonce: We_Catering_Admin.nonce,
+                    date: date,
+                    menu_items: JSON.stringify(ids)
+                }).done(function(res){
+                    if (res && res.success) {
+                        alert('Daily menu saved.');
+                    } else {
+                        alert((res && res.data && res.data.message) || 'Failed to save.');
+                    }
+                }).fail(function(){ alert('Network error.'); });
+            });
+
+            // Remove user from organization
+            $(document).on('click', '.remove-user', function(e) {
+                e.preventDefault();
+                var userId = $(this).data('user-id');
+                var organizationId = $('#organization-select').val();
+                WeCateringAdmin.removeUserFromOrganization(userId, organizationId);
+            });
+
+            // Update user role
+            $(document).on('change', '.user-role-select', function() {
+                var userId = $(this).data('user-id');
+                var organizationId = $('#organization-select').val();
+                var role = $(this).val();
+                WeCateringAdmin.updateUserRole(userId, organizationId, role);
+            });
         },
 
         /**
@@ -315,89 +396,6 @@
             $('#save-organization').off('click').on('click', function() {
                 WeCateringAdmin.saveOrganization();
             });
-
-            // Delete organization
-            $(document).on('click', '.delete-organization', function(e){
-                e.preventDefault();
-                var id = $(this).data('id');
-                if (!id) return;
-                $.post(We_Catering_Admin.ajax_url, {
-                    action: 'we_catering_delete_organization',
-                    nonce: We_Catering_Admin.nonce,
-                    organization_id: id
-                }).done(function(res){
-                    if (res && res.success) {
-                        location.reload();
-                    } else {
-                        alert((res && res.data && res.data.message) || 'Failed to delete.');
-                    }
-                }).fail(function(){ alert('Network error.'); });
-            });
-
-            // Delete menu item
-            $(document).on('click', '.delete-menu-item', function(e){
-                e.preventDefault();
-                var id = $(this).data('id');
-                if (!id) return;
-                $.post(We_Catering_Admin.ajax_url, {
-                    action: 'we_catering_delete_menu_item',
-                    nonce: We_Catering_Admin.nonce,
-                    menu_item_id: id
-                }).done(function(res){
-                    if (res && res.success) {
-                        location.reload();
-                    } else {
-                        alert((res && res.data && res.data.message) || 'Failed to delete.');
-                    }
-                }).fail(function(){ alert('Network error.'); });
-            });
-
-            // Edit menu item
-            $(document).on('click', '.edit-menu-item', function(e){
-                e.preventDefault();
-                var id = $(this).data('id');
-                if (!id) return;
-                WeCateringAdmin.editMenuItem(id);
-            });
-
-        // Save daily menu
-        $('#save-daily-menu').on('click', function(e){
-            e.preventDefault();
-            var date = $('#menu_date').val();
-            var ids = [];
-            $('input[name="daily_menu_items[]"]:checked').each(function(){ ids.push($(this).val()); });
-            $.post(We_Catering_Admin.ajax_url, {
-                action: 'we_catering_set_daily_menu',
-                nonce: We_Catering_Admin.nonce,
-                date: date,
-                menu_items: JSON.stringify(ids)
-            }).done(function(res){
-                if (res && res.success) {
-                    alert('Daily menu saved.');
-                } else {
-                    alert((res && res.data && res.data.message) || 'Failed to save.');
-                }
-            }).fail(function(){ alert('Network error.'); });
-        });
-
-
-
-
-        // Remove user from organization
-        $(document).on('click', '.remove-user', function(e) {
-            e.preventDefault();
-            var userId = $(this).data('user-id');
-            var organizationId = $('#organization-select').val();
-            WeCateringAdmin.removeUserFromOrganization(userId, organizationId);
-        });
-
-        // Update user role
-        $(document).on('change', '.user-role-select', function() {
-            var userId = $(this).data('user-id');
-            var organizationId = $('#organization-select').val();
-            var role = $(this).val();
-            WeCateringAdmin.updateUserRole(userId, organizationId, role);
-        });
         },
 
         /**
@@ -488,6 +486,15 @@
                                     optgroup.append('<option value="' + item + '">' + item + '</option>');
                                 });
                                 $itemsSelect.append(optgroup);
+                            });
+
+                            // Ensure any custom saved items exist as options so they can be selected
+                            var existingValues = {};
+                            $itemsSelect.find('option').each(function(){ existingValues[$(this).val()] = true; });
+                            item.items.forEach(function(val){
+                                if (!existingValues[val]) {
+                                    $itemsSelect.append('<option value="' + val + '">' + val + '</option>');
+                                }
                             });
                             
                             // Set selected values

@@ -152,6 +152,123 @@ class Order {
     }
 
     /**
+     * Get existing order for user and date (pending) if any
+     *
+     * @param int $user_id
+     * @param string $date
+     * @param int $organization_id
+     * @return object|null
+     */
+    public function get_user_order_for_date( $user_id, $date, $organization_id = 0 ) {
+        global $wpdb;
+
+        $sql = $wpdb->prepare(
+            "SELECT * FROM {$this->table_name} WHERE user_id = %d AND order_date = %s AND status = 'pending' AND organization_id = %d ORDER BY id DESC LIMIT 1",
+            $user_id,
+            $date,
+            $organization_id
+        );
+
+        return $wpdb->get_row( $sql );
+    }
+
+    /**
+     * Create or update an order for the same day by merging item quantities
+     *
+     * @param array $data Same structure as create()
+     * @return int|false Returns order_id
+     */
+    public function create_or_update_same_day( $data ) {
+        global $wpdb;
+
+        $defaults = array(
+            'user_id' => 0,
+            'organization_id' => 0,
+            'order_date' => current_time( 'Y-m-d' ),
+            'total_amount' => 0.00,
+            'status' => 'pending',
+            'notes' => '',
+            'order_items' => array(),
+        );
+        $data = wp_parse_args( $data, $defaults );
+
+        if ( empty( $data['user_id'] ) ) {
+            return false;
+        }
+
+        if ( ! $this->is_order_window_open() ) {
+            return false;
+        }
+
+        // Look up existing order
+        $existing = $this->get_user_order_for_date( (int) $data['user_id'], $data['order_date'], (int) $data['organization_id'] );
+
+        if ( ! $existing ) {
+            // No existing order -> create new
+            return $this->create( $data );
+        }
+
+        $order_id = (int) $existing->id;
+
+        // Start transaction
+        $wpdb->query( 'START TRANSACTION' );
+        try {
+            // Build current items map
+            $current_items = array();
+            $rows = $wpdb->get_results( $wpdb->prepare( "SELECT menu_item_id, quantity, unit_price FROM {$this->order_items_table} WHERE order_id = %d", $order_id ) );
+            foreach ( (array) $rows as $row ) {
+                $current_items[ (int) $row->menu_item_id ] = array( 'quantity' => (int) $row->quantity, 'unit_price' => (float) $row->unit_price );
+            }
+
+            // Merge incoming items
+            foreach ( (array) $data['order_items'] as $item ) {
+                $menu_item_id = (int) $item['menu_item_id'];
+                $qty = max( 0, (int) $item['quantity'] );
+                $price = (float) $item['unit_price'];
+
+                if ( isset( $current_items[ $menu_item_id ] ) ) {
+                    $new_qty = $current_items[ $menu_item_id ]['quantity'] + $qty;
+                    $current_items[ $menu_item_id ]['quantity'] = $new_qty;
+                    $current_items[ $menu_item_id ]['unit_price'] = $price; // latest price wins
+                } else {
+                    $current_items[ $menu_item_id ] = array( 'quantity' => $qty, 'unit_price' => $price );
+                }
+            }
+
+            // Rewrite order items: delete and re-insert for simplicity
+            $wpdb->delete( $this->order_items_table, array( 'order_id' => $order_id ), array( '%d' ) );
+
+            $new_total = 0.0;
+            foreach ( $current_items as $mid => $ci ) {
+                if ( $ci['quantity'] <= 0 ) {
+                    continue;
+                }
+                $total_price = (float) ( $ci['quantity'] * $ci['unit_price'] );
+                $new_total += $total_price;
+                $wpdb->insert( $this->order_items_table, array(
+                    'order_id' => $order_id,
+                    'menu_item_id' => (int) $mid,
+                    'quantity' => (int) $ci['quantity'],
+                    'unit_price' => (float) $ci['unit_price'],
+                    'total_price' => $total_price,
+                ) );
+            }
+
+            // Update order total and notes if provided
+            $wpdb->update( $this->table_name, array(
+                'total_amount' => $new_total,
+                'notes' => isset( $data['notes'] ) ? sanitize_textarea_field( $data['notes'] ) : $existing->notes,
+            ), array( 'id' => $order_id ), array( '%f', '%s' ), array( '%d' ) );
+
+            $wpdb->query( 'COMMIT' );
+            return $order_id;
+        } catch ( Exception $e ) {
+            $wpdb->query( 'ROLLBACK' );
+            return false;
+        }
+    }
+
+    /**
      * Get order by ID
      *
      * @param int $id

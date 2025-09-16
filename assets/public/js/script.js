@@ -34,6 +34,18 @@
 
 		$form.on('input change', 'input[type="number"]', recalc);
 		recalc();
+		// Qty +/- buttons
+		$(document).on('click', '.wec-qty-inc', function(){
+			var $input = $(this).siblings('input[type="number"]');
+			var val = parseInt($input.val(), 10) || 0;
+			$input.val(val + 1).trigger('change');
+		});
+		$(document).on('click', '.wec-qty-dec', function(){
+			var $input = $(this).siblings('input[type="number"]');
+			var val = parseInt($input.val(), 10) || 0;
+			$input.val(Math.max(0, val - 1)).trigger('change');
+		});
+
 
 		// Check order window status
 		function checkOrderWindowStatus() {
@@ -81,6 +93,18 @@
 
 		// Check order window status every 30 seconds
 		setInterval(checkOrderWindowStatus, 30000);
+
+
+		// Grid/List toggle
+		$(document).on('click', '.wec-toggle', function(){
+			var view = $(this).data('view');
+			var $grid = $('#we-catering-menu-grid');
+			if (view === 'list') {
+				$grid.addClass('wec-list');
+			} else {
+				$grid.removeClass('wec-list');
+			}
+		});
 
 		$form.on('submit', function(e){
 			e.preventDefault();

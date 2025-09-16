@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<label for="menu_item_items"><?php esc_html_e( 'Items', 'we-catering' ); ?></label>
 						</th>
 						<td>
-							<select id="menu_item_items" name="items" class="regular-text we-catering-select2" style="width: 100%;" multiple>
+							<select id="menu_item_items" name="items[]" class="regular-text we-catering-select2" style="width: 100%;" multiple>
 								<option value=""><?php esc_html_e( 'Select or add items...', 'we-catering' ); ?></option>
 
 								<!-- Proteins -->

@@ -1,7 +1,7 @@
 /* We Catering Public Styles */
 .we-catering-public { max-width: 960px; margin: 20px auto; }
 .we-catering-menu-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.we-catering-menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 15px; margin: 20px 0; }
+.we-catering-menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
 .we-catering-menu-card { border:1px solid #ddd; border-radius:8px; padding:12px; background:#fff; }
 .we-catering-menu-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
 .we-catering-price { color:#0073aa; font-weight:600; }
@@ -15,6 +15,8 @@
 @media (max-width: 768px) {
   .we-catering-order-summary { flex-direction: column; gap: 10px; align-items: flex-start; }
   .we-catering-qty input[type=number] { width: 64px; }
+  /* On small screens, grid becomes single column */
+  .we-catering-menu-grid { grid-template-columns: 1fr; }
 }
 
 /* Order Window Status */
@@ -78,3 +80,11 @@
     cursor: not-allowed !important;
     opacity: 0.6;
 }
+
+/* View toggle */
+.we-catering-view-toggle { display:flex; gap:8px; }
+
+/* List view modifier: always single column */
+.we-catering-menu-grid.wec-list { grid-template-columns: 1fr; }
+.we-catering-menu-grid.wec-list .we-catering-menu-card { display:flex; justify-content: space-between; align-items: center; gap: 12px; }
+.we-catering-menu-grid.wec-list .we-catering-desc { min-height: auto; margin: 0; }

@@ -805,6 +805,7 @@ class Ajax {
         $settings = get_option( 'we_catering_settings', array() );
         error_log( 'Current settings: ' . wp_json_encode( $settings ) );
 
+        // Always create a new order (no merging)
         $result = $order->create( $data );
 
         error_log( 'order create or not -> ' . wp_json_encode( $result, JSON_PRETTY_PRINT ) );
@@ -818,7 +819,15 @@ class Ajax {
             );
         }
 
-        wp_send_json_error( array( 'message' => __( 'Failed to create order. Please try again or check the order window.', 'we-catering' ) ) );
+        // Provide detailed error messages
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( array( 'message' => __( 'Please log in to place an order.', 'we-catering' ) ) );
+        }
+        if ( ! $order->is_order_window_open() ) {
+            $status = $order->get_order_window_status();
+            wp_send_json_error( array( 'message' => sprintf( __( 'Order window is closed. Next window: %s - %s', 'we-catering' ), $status['start_time'], $status['end_time'] ) ) );
+        }
+        wp_send_json_error( array( 'message' => __( 'Failed to place order due to a server error. Please try again.', 'we-catering' ) ) );
     }
 
     /**
