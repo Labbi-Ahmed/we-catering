@@ -194,24 +194,54 @@
                 }).fail(function(){ alert('Network error.'); });
             });
 
-            // Orders: update status via select dropdown
-            $(document).on('change', '.update-status-select', function(){
+            // Orders: change status with popup modal (select + submit)
+            $(document).on('click', '.change-status', function(){
                 var orderId = $(this).data('order-id');
-                var newStatus = $(this).val();
+                var current = $(this).data('current-status') || 'pending';
+                var html = '\
+                <div class="we-catering-modal">\
+                  <div class="we-catering-modal-content">\
+                    <div class="we-catering-modal-header">\
+                      <h3>Change Order Status</h3>\
+                      <span class="we-catering-modal-close">&times;</span>\
+                    </div>\
+                    <div class="we-catering-modal-body">\
+                      <label for="wec-new-status">Select status</label>\
+                      <select id="wec-new-status" class="regular-text">\
+                        <option value="pending" ' + (current==='pending'?'selected':'') + '>Pending</option>\
+                        <option value="confirmed" ' + (current==='confirmed'?'selected':'') + '>Accepted</option>\
+                        <option value="cancelled" ' + (current==='cancelled'?'selected':'') + '>Rejected</option>\
+                      </select>\
+                    </div>\
+                    <div class="we-catering-modal-footer">\
+                      <button type="button" class="button button-secondary we-catering-modal-close-button">Cancel</button>\
+                      <button type="button" class="button button-primary" id="wec-submit-status" data-order-id="' + orderId + '">Update</button>\
+                    </div>\
+                  </div>\
+                </div>';
+                $('body').append(html);
+                $('.we-catering-modal').fadeIn();
+                WeCateringAdmin.bindModalEvents();
+            });
+
+            $(document).on('click', '#wec-submit-status', function(){
+                var orderId = $(this).data('order-id');
+                var newStatus = $('#wec-new-status').val();
                 if (!orderId || !newStatus) return;
+                var $btn = $(this).prop('disabled', true).text('Updating...');
                 $.post(We_Catering_Admin.ajax_url, {
                     action: 'we_catering_update_order_status',
                     nonce: We_Catering_Admin.nonce,
                     order_id: orderId,
                     status: newStatus
                 }).done(function(res){
-                    if (!res || !res.success) {
-                        alert((res && res.data && res.data.message) || 'Failed to update status.');
+                    if (res && res.success) {
+                        location.reload();
                     } else {
-                        // No full reload needed; optional: update label if present
-                        // location.reload();
+                        alert((res && res.data && res.data.message) || 'Failed to update status.');
                     }
-                }).fail(function(){ alert('Network error.'); });
+                }).fail(function(){ alert('Network error.'); })
+                .always(function(){ $btn.prop('disabled', false).text('Update'); });
             });
         },
 

@@ -148,11 +148,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                                         <a href="#" class="button button-small view-order" data-order-id="<?php echo esc_attr( $order->id ); ?>">
                                             <?php esc_html_e( 'View', 'we-catering' ); ?>
                                         </a>
-                                        <select class="update-status-select" data-order-id="<?php echo esc_attr( $order->id ); ?>" style="margin-left:6px;">
-                                            <option value="pending" <?php selected( $order->status, 'pending' ); ?>><?php esc_html_e( 'Pending', 'we-catering' ); ?></option>
-                                            <option value="confirmed" <?php selected( $order->status, 'confirmed' ); ?>><?php esc_html_e( 'Accepted', 'we-catering' ); ?></option>
-                                            <option value="cancelled" <?php selected( $order->status, 'cancelled' ); ?>><?php esc_html_e( 'Rejected', 'we-catering' ); ?></option>
-                                        </select>
+                                        <button type="button" class="button button-small change-status" data-order-id="<?php echo esc_attr( $order->id ); ?>" data-current-status="<?php echo esc_attr( $order->status ); ?>" style="margin-left:6px;">
+                                            <?php esc_html_e( 'Change Status', 'we-catering' ); ?>
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
