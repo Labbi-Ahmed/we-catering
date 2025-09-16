@@ -148,6 +148,71 @@
                 var role = $(this).val();
                 WeCateringAdmin.updateUserRole(userId, organizationId, role);
             });
+
+            // Orders: view details
+            $(document).on('click', '.view-order', function(e){
+                e.preventDefault();
+                var orderId = $(this).data('order-id');
+                if (!orderId) return;
+                $.post(We_Catering_Admin.ajax_url, {
+                    action: 'we_catering_get_order_details',
+                    nonce: We_Catering_Admin.nonce,
+                    order_id: orderId
+                }).done(function(res){
+                    if (res && res.success) {
+                        var o = res.data.order;
+                        var items = res.data.items || [];
+                        var rows = items.map(function(it){
+                            return '<tr><td>' + it.menu_item_name + '</td><td>' + it.quantity + '</td><td>$' + (it.unit_price || 0).toFixed(2) + '</td><td>$' + (it.total_price || 0).toFixed(2) + '</td></tr>';
+                        }).join('');
+                        var html = '\
+                        <div class="we-catering-modal">\
+                          <div class="we-catering-modal-content">\
+                            <div class="we-catering-modal-header">\
+                              <h3>Order #' + o.order_number + '</h3>\
+                              <span class="we-catering-modal-close">&times;</span>\
+                            </div>\
+                            <div class="we-catering-modal-body">\
+                              <p><strong>Customer:</strong> ' + o.customer_name + ' (' + o.customer_email + ')</p>\
+                              <p><strong>Organization:</strong> ' + (o.organization_name || '') + '</p>\
+                              <p><strong>Date:</strong> ' + o.order_date + '</p>\
+                              <p><strong>Status:</strong> ' + o.status + '</p>\
+                              <table class="wp-list-table widefat fixed striped"><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>' + rows + '</tbody></table>\
+                              <p style="text-align:right;"><strong>Total:</strong> $' + (o.total_amount || 0).toFixed(2) + '</p>\
+                            </div>\
+                            <div class="we-catering-modal-footer">\
+                              <button type="button" class="button button-secondary we-catering-modal-close-button">Close</button>\
+                            </div>\
+                          </div>\
+                        </div>';
+                        $('body').append(html);
+                        $('.we-catering-modal').fadeIn();
+                        WeCateringAdmin.bindModalEvents();
+                    } else {
+                        alert((res && res.data && res.data.message) || 'Failed to load order.');
+                    }
+                }).fail(function(){ alert('Network error.'); });
+            });
+
+            // Orders: update status via select dropdown
+            $(document).on('change', '.update-status-select', function(){
+                var orderId = $(this).data('order-id');
+                var newStatus = $(this).val();
+                if (!orderId || !newStatus) return;
+                $.post(We_Catering_Admin.ajax_url, {
+                    action: 'we_catering_update_order_status',
+                    nonce: We_Catering_Admin.nonce,
+                    order_id: orderId,
+                    status: newStatus
+                }).done(function(res){
+                    if (!res || !res.success) {
+                        alert((res && res.data && res.data.message) || 'Failed to update status.');
+                    } else {
+                        // No full reload needed; optional: update label if present
+                        // location.reload();
+                    }
+                }).fail(function(){ alert('Network error.'); });
+            });
         },
 
         /**

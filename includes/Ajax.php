@@ -55,6 +55,9 @@ class Ajax {
         add_action( 'wp_ajax_we_catering_create_user_for_organization', array( $this, 'create_user_for_organization' ) );
         add_action( 'wp_ajax_we_catering_remove_user_from_organization', array( $this, 'remove_user_from_organization' ) );
         add_action( 'wp_ajax_we_catering_update_user_role', array( $this, 'update_user_role' ) );
+
+        // Admin: Order details view
+        add_action( 'wp_ajax_we_catering_get_order_details', array( $this, 'get_order_details' ) );
     }
 
     /**
@@ -825,8 +828,20 @@ class Ajax {
         }
         if ( ! $order->is_order_window_open() ) {
             $status = $order->get_order_window_status();
-            wp_send_json_error( array( 'message' => sprintf( __( 'Order window is closed. Next window: %s - %s', 'we-catering' ), $status['start_time'], $status['end_time'] ) ) );
+            wp_send_json_error( array( 'message' => sprintf( __( 'Order window is closed. Next window: %1$s - %2$s', 'we-catering' ), $status['start_time'], $status['end_time'] ) ) );
         }
+
+        // Log DB error for debugging
+        global $wpdb;
+        if ( ! empty( $wpdb->last_error ) ) {
+            error_log( 'WeCatering order create failed: ' . $wpdb->last_error );
+        }
+
+        // If admin, expose DB error to help debugging
+        if ( current_user_can( 'manage_options' ) && ! empty( $wpdb->last_error ) ) {
+            wp_send_json_error( array( 'message' => sprintf( __( 'Failed to place order: %s', 'we-catering' ), $wpdb->last_error ) ) );
+        }
+
         wp_send_json_error( array( 'message' => __( 'Failed to place order due to a server error. Please try again.', 'we-catering' ) ) );
     }
 
@@ -1272,5 +1287,58 @@ class Ajax {
                 )
             );
         }
+    }
+
+    /**
+     * Get single order details (admin)
+     */
+    public function get_order_details() {
+        // Verify nonce
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['nonce'] ), 'we_catering_admin_nonce' ) ) {
+            wp_die( 'Security check failed' );
+        }
+
+        // Check permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+
+        $order_id = isset( $_POST['order_id'] ) ? intval( wp_unslash( $_POST['order_id'] ) ) : 0;
+        if ( ! $order_id ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid order ID.', 'we-catering' ) ) );
+        }
+
+        $order = new Order();
+        $order_row = $order->get_by_id( $order_id );
+        if ( ! $order_row ) {
+            wp_send_json_error( array( 'message' => __( 'Order not found.', 'we-catering' ) ) );
+        }
+
+        $items = $order->get_order_items( $order_id );
+        $items_out = array();
+        foreach ( (array) $items as $it ) {
+            $items_out[] = array(
+                'menu_item_id' => (int) $it->menu_item_id,
+                'menu_item_name' => (string) $it->menu_item_name,
+                'quantity' => (int) $it->quantity,
+                'unit_price' => (float) $it->unit_price,
+                'total_price' => (float) $it->total_price,
+            );
+        }
+
+        wp_send_json_success( array(
+            'order' => array(
+                'id' => (int) $order_row->id,
+                'order_number' => (string) $order_row->order_number,
+                'customer_name' => (string) $order_row->customer_name,
+                'customer_email' => (string) $order_row->customer_email,
+                'organization_name' => (string) $order_row->organization_name,
+                'order_date' => (string) $order_row->order_date,
+                'status' => (string) $order_row->status,
+                'total_amount' => (float) $order_row->total_amount,
+                'notes' => (string) $order_row->notes,
+            ),
+            'items' => $items_out,
+        ) );
     }
 }

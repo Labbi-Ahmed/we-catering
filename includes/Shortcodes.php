@@ -118,8 +118,9 @@ class Shortcodes {
 			foreach ( $orders as $order ) {
 				$items = $order_model->get_order_items( $order->id );
 				echo '<div class="we-catering-order-box" style="border:1px solid #ddd;border-radius:8px;padding:12px;margin:10px 0;">';
-				echo '<div style="display:flex;justify-content:space-between;align-items:center;">';
+				echo '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">';
 				echo '<strong>' . esc_html__( 'Order #', 'we-catering' ) . esc_html( $order->order_number ) . '</strong>';
+				echo '<span class="we-catering-status ' . esc_attr( $order->status ) . '" style="padding:2px 8px;border-radius:12px;border:1px solid #ddd;">' . esc_html( ucfirst( $order->status ) ) . '</span>';
 				echo '<span>' . esc_html( sprintf( __( 'Total: $%s', 'we-catering' ), number_format( (float) $order->total_amount, 2 ) ) ) . '</span>';
 				echo '</div>';
 				if ( ! empty( $items ) ) {
