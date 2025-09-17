@@ -149,7 +149,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                             <?php esc_html_e( 'View', 'we-catering' ); ?>
                                         </a>
                                         <button type="button" class="button button-small change-status" data-order-id="<?php echo esc_attr( $order->id ); ?>" data-current-status="<?php echo esc_attr( $order->status ); ?>" style="margin-left:6px;">
-                                            <?php esc_html_e( 'Change Status', 'we-catering' ); ?>
+                                            <?php esc_html_e( 'Status', 'we-catering' ); ?>
                                         </button>
                                     </td>
                                 </tr>
